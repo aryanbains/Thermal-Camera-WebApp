@@ -6,7 +6,7 @@ body {
     margin: 0;
   }
   
-  canvas {
+  video, canvas {
     border: 1px solid #000;
   }
   

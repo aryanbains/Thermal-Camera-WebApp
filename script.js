@@ -1,29 +1,40 @@
 document.addEventListener('DOMContentLoaded', function () {
+    const video = document.getElementById('thermalCamera');
     const canvas = document.getElementById('thermalCanvas');
     const context = canvas.getContext('2d');
   
-    function generateRandomTemperature() {
-      return Math.random() * 100; // Adjust the range based on your preferences
-    }
-  
-    function getColor(temperature) {
-      const blue = Math.min(255, Math.round(255 * (1 - temperature / 100)));
-      const red = Math.min(255, Math.round(255 * (temperature / 100)));
-      const green = 0;
-  
-      return `rgb(${red}, ${green}, ${blue})`;
-    }
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function (stream) {
+        video.srcObject = stream;
+      })
+      .catch(function (error) {
+        console.error('Error accessing the camera:', error);
+      });
   
     function updateCanvas() {
-      for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          const temperature = generateRandomTemperature();
-          const color = getColor(temperature);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
   
-          context.fillStyle = color;
-          context.fillRect(x, y, 1, 1);
-        }
+      // Get the image data from the canvas
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+  
+      // Apply thermal imaging processing to the image data
+      for (let i = 0; i < data.length; i += 4) {
+        const grayscale = (data[i] + data[i + 1] + data[i + 2]) / 3;
+  
+        // Map grayscale to a color gradient (example: blue to red)
+        const blue = Math.min(255, Math.round(255 * (1 - grayscale / 255)));
+        const red = Math.min(255, Math.round(255 * (grayscale / 255)));
+        const green = 0;
+  
+        // Set the new color values
+        data[i] = red;
+        data[i + 1] = green;
+        data[i + 2] = blue;
       }
+  
+      // Put the modified image data back onto the canvas
+      context.putImageData(imageData, 0, 0);
     }
   
     setInterval(updateCanvas, 1000);
